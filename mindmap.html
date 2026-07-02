@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPDP Framework — Mind Map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:          #F5F8FF;
+      --surface:     #FFFFFF;
+      --border:      #D9E4F0;
+      --accent:      #1A56DB;
+      --accent-lt:   #EBF2FF;
+      --text:        #1A1F2E;
+      --text-muted:  #6B7A99;
+      --ui-font:     'JetBrains Mono', monospace;
+      --body-font:   'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      font-family: var(--body-font);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .toolbar-title {
+      font-family: var(--ui-font);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+    .toolbar-actions { display: flex; align-items: center; gap: 5px; }
+    .tb-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 11px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--ui-font);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      height: 26px;
+    }
+    .tb-btn:hover { background: var(--accent-lt); color: var(--accent); border-color: var(--accent); }
+    .tb-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tb-btn.primary:hover { background: #1448C2; }
+    .tb-sep { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
+    .zoom-label {
+      font-family: var(--ui-font);
+      font-size: 9px;
+      color: var(--text-muted);
+      min-width: 34px;
+      text-align: center;
+    }
+
+    /* Canvas */
+    #wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      user-select: none;
+      background: radial-gradient(ellipse at 50% 30%, #EBF2FF 0%, #F5F8FF 70%);
+    }
+    #wrap:active { cursor: grabbing; }
+    #wrap svg { position: absolute; top: 0; left: 0; }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(26,86,219,0.08);
+    }
+    .legend-title {
+      font-family: var(--ui-font);
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .legend-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-muted); }
+    .ldot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    .hint {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      font-family: var(--ui-font);
+      font-size: 8px;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="toolbar-title">DPDP Framework — Mind Map</span>
+  <div class="toolbar-actions">
+    <button class="tb-btn" id="btnExpandAll">
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      Expand All
+    </button>
+    <button class="tb-btn" id="btnCollapseAll">
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 3H3v6M15 21h6v-6M3 3l7 7M21 21l-7-7"/></svg>
+      Collapse
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="btnZoomOut">
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="8" y1="11" x2="14" y2="11"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button class="tb-btn" id="btnZoomIn">
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+    <button class="tb-btn primary" id="btnFit">
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/></svg>
+      Fit
+    </button>
+  </div>
+</div>
+
+<div id="wrap">
+  <svg id="mm" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <div class="legend">
+    <div class="legend-title">Levels</div>
+    <div class="legend-row"><div class="ldot" style="background:#1A56DB;"></div>Root</div>
+    <div class="legend-row"><div class="ldot" style="background:#0E7490;"></div>Chapter</div>
+    <div class="legend-row"><div class="ldot" style="background:#6D28D9;"></div>Section</div>
+    <div class="legend-row"><div class="ldot" style="background:#374151;"></div>Clause</div>
+  </div>
+
+  <div class="hint">
+    🖱 Scroll to zoom &nbsp;·&nbsp; Drag to pan &nbsp;·&nbsp; Click node to toggle
+  </div>
+</div>
+
+<script>
+// ─── Data ──────────────────────────────────────────────────────
+const RAW = {name:"DPDP Framework",children:[
+  {name:"Scope &\nApplicability",children:[
+    {name:"Digital personal data"},
+    {name:"Processing within India"},
+    {name:"Outside India for\nIndian goods/services"},
+    {name:"Excludes personal/\ndomestic use"},
+    {name:"Excludes publicly\navailable data"}
+  ]},
+  {name:"Obligations of\nData Fiduciaries",children:[
+    {name:"Consent &\nNotice",children:[
+      {name:"Notice in English /\n8th Schedule langs"},
+      {name:"Itemised description\nof data & purpose"},
+      {name:"Free, specific &\ninformed consent"},
+      {name:"Right to withdraw\nconsent"}
+    ]},
+    {name:"Processing\nGrounds",children:[
+      {name:"Lawful purpose\nwith consent"},
+      {name:"Legitimate uses for\nState functions"},
+      {name:"Medical emergencies\n& public health"},
+      {name:"Disasters and\npublic order"},
+      {name:"Employment\npurposes"}
+    ]},
+    {name:"General\nObligations",children:[
+      {name:"Ensure data accuracy\n& completeness"},
+      {name:"Reasonable security\nsafeguards"},
+      {name:"Data breach notification\nto Board"},
+      {name:"Erasure after\npurpose completion"},
+      {name:"Grievance redressal\nmechanism"}
+    ]},
+    {name:"Significant Data\nFiduciary",children:[
+      {name:"Appoint India-based\nDPO"},
+      {name:"Appoint independent\ndata auditor"},
+      {name:"Periodic DPIA"},
+      {name:"Periodic audits"}
+    ]}
+  ]},
+  {name:"Rights &\nDuties",children:[
+    {name:"Rights",children:[
+      {name:"Right to access\ninformation"},
+      {name:"Right to correction\n& updating"},
+      {name:"Right to erasure"},
+      {name:"Right of grievance\nredressal"},
+      {name:"Right to nominate"}
+    ]},
+    {name:"Duties",children:[
+      {name:"Comply with\napplicable laws"},
+      {name:"No impersonation\nwhile providing data"},
+      {name:"No suppression of\nmaterial info"},
+      {name:"No false or\nfrivolous complaints"},
+      {name:"Furnish authentic\ninformation"}
+    ]}
+  ]},
+  {name:"Special\nCategories",children:[
+    {name:"Children",children:[
+      {name:"Verifiable parental\nconsent"},
+      {name:"No detrimental\nprocessing"},
+      {name:"No tracking /\nbehavioural monitoring"},
+      {name:"No targeted\nadvertising"}
+    ]},
+    {name:"Persons with\nDisabilities",children:[
+      {name:"Verifiable lawful\nguardian consent"},
+      {name:"Due diligence on\nguardianship status"}
+    ]}
+  ]},
+  {name:"Regulatory\nFramework",children:[
+    {name:"Data Protection\nBoard of India",children:[
+      {name:"Body corporate with\nperpetual succession"},
+      {name:"Independent\ndigital office"},
+      {name:"Inquiry and\npenalty powers"},
+      {name:"Directional and\nremedial powers"}
+    ]},
+    {name:"Consent\nManager",children:[
+      {name:"Registered with\nthe Board"},
+      {name:"Fiduciary capacity to\nData Principal"},
+      {name:"Interoperable\nconsent lifecycle"},
+      {name:"Maintain records\nof consent"}
+    ]},
+    {name:"Appellate\nTribunal",children:[
+      {name:"Appeal within\nsixty days"},
+      {name:"TDSAT as designated\ntribunal"},
+      {name:"Orders executable as\ncivil court decrees"}
+    ]}
+  ]},
+  {name:"Enforcement &\nPenalties",children:[
+    {name:"Monetary\nPenalties",children:[
+      {name:"Based on nature &\ngravity of breach"},
+      {name:"Consideration of gain\nor avoided loss"},
+      {name:"Credited to Consolidated\nFund of India"}
+    ]},
+    {name:"Exemptions",children:[
+      {name:"Legal rights\nenforcement"},
+      {name:"Judicial / quasi-\njudicial functions"},
+      {name:"Prevention &\ndetection of offences"},
+      {name:"Research, archiving,\nor statistical purposes"}
+    ]},
+    {name:"Miscellaneous",children:[
+      {name:"Voluntary\nundertakings"},
+      {name:"Alternate dispute\nresolution"},
+      {name:"Power to block\naccess to information"}
+    ]}
+  ]}
+]};
+
+// ─── Style config ───────────────────────────────────────────────
+const STYLES = [
+  { fill:"#1A56DB", stroke:"#1448C2", text:"#FFFFFF" },  // L0 root
+  { fill:"#0E7490", stroke:"#0A5B73", text:"#FFFFFF" },  // L1 chapter
+  { fill:"#6D28D9", stroke:"#5B21B6", text:"#FFFFFF" },  // L2 section
+  { fill:"#374151", stroke:"#1F2937", text:"#FFFFFF" },  // L3+ clause
+];
+function getStyle(lvl) { return STYLES[Math.min(lvl, STYLES.length - 1)]; }
+
+// ─── Layout constants ───────────────────────────────────────────
+// Top-down layout: x = horizontal spread, y = depth level
+const LEAF_W    = 140;   // leaf node width
+const LEAF_H    = 52;    // leaf node height (for 2-line text)
+const NODE_W    = 140;   // non-leaf node width
+const NODE_H    = 52;
+const ROOT_W    = 160;
+const ROOT_H    = 52;
+const H_PAD     = 14;    // horizontal gap between sibling leaf spans
+const V_GAP     = 54;    // vertical gap between levels
+const PAD_X     = 30;    // canvas left padding
+const PAD_Y     = 30;    // canvas top padding
+
+// ─── Tree builder ───────────────────────────────────────────────
+function buildNode(raw, level, parent) {
+  const node = { name: raw.name, level, parent, children: [], open: level === 0 };
+  if (raw.children) node.children = raw.children.map(c => buildNode(c, level + 1, node));
+  return node;
+}
+
+// Count visible leaf spans (each leaf = 1 unit of LEAF_W + H_PAD)
+function spanCount(node) {
+  if (!node.children.length || !node.open) return 1;
+  return node.children.reduce((s, c) => s + spanCount(c), 0);
+}
+
+// ─── Layout ─────────────────────────────────────────────────────
+function computeLayout(root) {
+  const pos = new Map();
+
+  // Pass 1: assign center x (horizontal center of each node's subtree)
+  function assignX(node, xStart) {
+    const spans = spanCount(node);
+    const totalW = spans * LEAF_W + (spans - 1) * H_PAD;
+    const cx = xStart + totalW / 2;
+    pos.set(node, { cx });
+
+    if (node.open && node.children.length) {
+      let cur = xStart;
+      for (const c of node.children) {
+        const cs = spanCount(c);
+        assignX(c, cur);
+        cur += cs * LEAF_W + (cs > 0 ? (cs - 1) * H_PAD : 0) + H_PAD;
+      }
+    }
+  }
+
+  // Pass 2: assign y based on depth
+  function assignY(node) {
+    const p = pos.get(node);
+    const h = node.level === 0 ? ROOT_H : NODE_H;
+    const w = node.level === 0 ? ROOT_W : NODE_W;
+    p.y = PAD_Y + node.level * (NODE_H + V_GAP);
+    p.x = p.cx - w / 2;
+    p.w = w; p.h = h;
+    if (node.open) node.children.forEach(assignY);
+  }
+
+  assignX(root, PAD_X);
+  assignY(root);
+  return pos;
+}
+
+// ─── SVG helpers ────────────────────────────────────────────────
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('mm');
+
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+function lighten(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, (n >> 16) + amt);
+  const g = Math.min(255, ((n >> 8) & 0xff) + amt);
+  const b = Math.min(255, (n & 0xff) + amt);
+  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+}
+
+// ─── Render ─────────────────────────────────────────────────────
+let root = buildNode(RAW, 0, null);
+
+function render() {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const pos = computeLayout(root);
+
+  // Compute SVG size
+  let maxX = 0, maxY = 0;
+  pos.forEach(({ x, y, w, h }) => { maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h); });
+  const SVG_W = maxX + PAD_X;
+  const SVG_H = maxY + PAD_Y;
+  svg.setAttribute('width', SVG_W);
+  svg.setAttribute('height', SVG_H);
+
+  // Defs: gradients
+  const defs = el('defs');
+  STYLES.forEach((s, i) => {
+    const grad = el('linearGradient', { id: `g${i}`, x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+    const s1 = el('stop', { offset: '0%', 'stop-color': lighten(s.fill, 22) });
+    const s2 = el('stop', { offset: '100%', 'stop-color': s.fill });
+    grad.appendChild(s1); grad.appendChild(s2);
+    defs.appendChild(grad);
+  });
+  // grid bg pattern
+  const pat = el('pattern', { id: 'grid', width: '28', height: '28', patternUnits: 'userSpaceOnUse' });
+  const gridPath = el('path', { d: 'M 28 0 L 0 0 0 28', fill: 'none', stroke: '#D9E4F0', 'stroke-width': '0.5' });
+  pat.appendChild(gridPath);
+  defs.appendChild(pat);
+  svg.appendChild(defs);
+
+  // Grid background
+  const bg = el('rect', { width: SVG_W, height: SVG_H, fill: 'url(#grid)' });
+  svg.appendChild(bg);
+
+  const connG = el('g');
+  const nodeG = el('g');
+  svg.appendChild(connG);
+  svg.appendChild(nodeG);
+
+  function drawNode(node) {
+    const p = pos.get(node);
+    if (!p) return;
+    const lv = Math.min(node.level, STYLES.length - 1);
+    const s = getStyle(lv);
+
+    // Connector to parent (vertical S-curve)
+    if (node.parent) {
+      const pp = pos.get(node.parent);
+      const px = pp.cx;
+      const py = pp.y + pp.h;
+      const cx = p.cx;
+      const cy = p.y;
+      const my = (py + cy) / 2;
+      const conn = el('path', {
+        d: `M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}`,
+        fill: 'none',
+        stroke: getStyle(Math.min(node.parent.level, STYLES.length - 1)).fill,
+        'stroke-width': node.level <= 1 ? '1.8' : '1.2',
+        'stroke-opacity': node.level <= 2 ? '0.5' : '0.3'
+      });
+      connG.appendChild(conn);
+    }
+
+    const g = el('g');
+    g.style.cursor = node.children.length ? 'pointer' : 'default';
+
+    // Shadow rect
+    const shadow = el('rect', {
+      x: p.x + 2, y: p.y + 3,
+      width: p.w, height: p.h, rx: '8',
+      fill: s.fill, 'fill-opacity': '0.12'
+    });
+    g.appendChild(shadow);
+
+    // Main rect
+    const rect = el('rect', {
+      x: p.x, y: p.y,
+      width: p.w, height: p.h, rx: '8',
+      fill: `url(#g${lv})`,
+      stroke: s.stroke, 'stroke-width': '1'
+    });
+    g.appendChild(rect);
+
+    // Text — split on \n or wrap
+    const rawLines = node.name.split('\n');
+    const fs = node.level === 0 ? 12 : 10.5;
+    const fw = node.level <= 1 ? '600' : '500';
+    const lh = fs + 3;
+    const totalLH = rawLines.length * lh - 3;
+    const btnSpace = node.children.length ? 10 : 0;
+    rawLines.forEach((ln, i) => {
+      const ty = p.y + (p.h - btnSpace) / 2 - totalLH / 2 + i * lh + fs / 2;
+      const t = el('text', {
+        x: p.cx, y: ty,
+        'text-anchor': 'middle',
+        'dominant-baseline': 'central',
+        'font-size': fs,
+        'font-family': "'Inter', sans-serif",
+        'font-weight': fw,
+        fill: s.text
+      });
+      t.textContent = ln;
+      g.appendChild(t);
+    });
+
+    // Expand/collapse badge at bottom center
+    if (node.children.length) {
+      const bx = p.cx, by = p.y + p.h - 8;
+      const badge = el('rect', {
+        x: bx - 9, y: by - 5,
+        width: 18, height: 10, rx: '5',
+        fill: 'rgba(255,255,255,0.22)',
+        stroke: 'rgba(255,255,255,0.4)', 'stroke-width': '0.8'
+      });
+      const badgeTxt = el('text', {
+        x: bx, y: by,
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-size': '8', 'font-weight': '700',
+        'font-family': "'JetBrains Mono', monospace",
+        fill: '#fff'
+      });
+      badgeTxt.textContent = node.open ? '▲' : '▼';
+      g.appendChild(badge); g.appendChild(badgeTxt);
+
+      g.addEventListener('click', e => {
+        e.stopPropagation();
+        node.open = !node.open;
+        render();
+        // don't auto-fit on every click for better UX
+      });
+    }
+
+    nodeG.appendChild(g);
+    if (node.open) node.children.forEach(drawNode);
+  }
+
+  drawNode(root);
+}
+
+// ─── Pan & Zoom ─────────────────────────────────────────────────
+const wrap = document.getElementById('wrap');
+let ox = 40, oy = 40, sc = 1;
+let dragging = false, dragStart = null;
+
+function applyT() {
+  svg.style.transform = `translate(${ox}px,${oy}px) scale(${sc})`;
+  svg.style.transformOrigin = '0 0';
+  document.getElementById('zoomLabel').textContent = Math.round(sc * 100) + '%';
+}
+
+function fitView() {
+  const svgW = parseFloat(svg.getAttribute('width') || 1000);
+  const svgH = parseFloat(svg.getAttribute('height') || 600);
+  const wW = wrap.clientWidth - 60, wH = wrap.clientHeight - 60;
+  sc = Math.min(wW / svgW, wH / svgH, 1.24);
+  ox = (wrap.clientWidth - svgW * sc) / 2;
+  oy = Math.max(20, (wrap.clientHeight - svgH * sc) / 2);
+  applyT();
+}
+
+wrap.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  dragging = true;
+  dragStart = { x: e.clientX - ox, y: e.clientY - oy };
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  ox = e.clientX - dragStart.x;
+  oy = e.clientY - dragStart.y;
+  applyT();
+});
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const d = e.deltaY > 0 ? 0.88 : 1.14;
+  const r = wrap.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  ox = mx - (mx - ox) * d;
+  oy = my - (my - oy) * d;
+  sc = Math.max(0.15, Math.min(3, sc * d));
+  applyT();
+}, { passive: false });
+
+// Toolbar
+document.getElementById('btnZoomIn').addEventListener('click', () => { sc = Math.min(3, sc * 1.2); applyT(); });
+document.getElementById('btnZoomOut').addEventListener('click', () => { sc = Math.max(0.15, sc / 1.2); applyT(); });
+document.getElementById('btnFit').addEventListener('click', fitView);
+
+document.getElementById('btnExpandAll').addEventListener('click', () => {
+  function openAll(n) { n.open = true; n.children.forEach(openAll); }
+  openAll(root); render(); fitView();
+});
+document.getElementById('btnCollapseAll').addEventListener('click', () => {
+  function closeAll(n) { n.open = false; n.children.forEach(closeAll); }
+  root.open = true; root.children.forEach(closeAll);
+  render(); fitView();
+});
+
+// Init
+render();
+const observer = new ResizeObserver(() => {
+  if (wrap.clientWidth > 0 && wrap.clientHeight > 0) {
+    observer.disconnect();
+    document.getElementById('btnCollapseAll').click();
+  }
+});
+observer.observe(wrap);
+</script>
+</body>
+</html>
